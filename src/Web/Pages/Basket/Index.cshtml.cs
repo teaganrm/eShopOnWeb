@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
+using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+using Microsoft.eShopWeb.ApplicationCore.Services;
 using Microsoft.eShopWeb.Web.Interfaces;
 using Microsoft.eShopWeb.Web.ViewModels;
 
@@ -63,6 +65,19 @@ public class IndexModel : PageModel
         var updateModel = items.ToDictionary(b => b.Id.ToString(), b => b.Quantity);
         var basket = await _basketService.SetQuantities(basketView.Id, updateModel);
         BasketModel = await _basketViewModelService.Map(basket);
+    }
+
+    public async Task OnPostDelete(IEnumerable<BasketItemViewModel> items)
+    {
+        if (!ModelState.IsValid)
+        {
+            return;
+        }
+
+        var basketView = await _basketViewModelService.GetOrCreateBasketForUser(GetOrSetBasketCookieAndUserName());
+        var updateModel = items.ToDictionary(b => b.Id.ToString(), b => b.Quantity);
+        await _basketService.SetQuantities(basketView.Id, updateModel);
+        await _basketService.DeleteBasketAsync(basketView.Id);
     }
 
     private string GetOrSetBasketCookieAndUserName()
